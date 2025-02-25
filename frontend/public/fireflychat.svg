@@ -1,0 +1,90 @@
+<svg
+  width="128"
+  height="128"
+  viewBox="0 0 128 128"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <!-- 
+    Gradient for the glowing abdomen
+    (yellowish to transparent)
+  -->
+  <defs>
+    <radialGradient id="fireflyGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#ffec85" />
+      <stop offset="70%" stop-color="#ffec85" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#ffec85" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Head -->
+  <circle
+    cx="64"
+    cy="30"
+    r="8"
+    fill="#3A3A3A"
+  />
+
+  <!-- Thorax -->
+  <ellipse
+    cx="64"
+    cy="46"
+    rx="12"
+    ry="10"
+    fill="#4B4B4B"
+  />
+
+  <!-- Abdomen (body) -->
+  <ellipse
+    cx="64"
+    cy="68"
+    rx="10"
+    ry="20"
+    fill="#3A3A3A"
+  />
+
+  <!-- Glowing section of the abdomen -->
+  <ellipse
+    cx="64"
+    cy="80"
+    rx="12"
+    ry="14"
+    fill="url(#fireflyGlow)"
+  />
+
+  <!-- Left Wing -->
+  <path
+    d="M54 44 
+       C35 40, 33 60, 44 75
+       C50 82, 55 82, 58 75
+       C62 65, 60 49, 54 44
+       Z"
+    fill="#999"
+    fill-opacity="0.3"
+  />
+
+  <!-- Right Wing -->
+  <path
+    d="M74 44 
+       C93 40, 95 60, 84 75
+       C78 82, 73 82, 70 75
+       C66 65, 68 49, 74 44
+       Z"
+    fill="#999"
+    fill-opacity="0.3"
+  />
+
+  <!-- Optional small antenna lines -->
+  <path
+    d="M59 22 L54 14"
+    stroke="#3A3A3A"
+    stroke-width="2"
+    stroke-linecap="round"
+  />
+  <path
+    d="M69 22 L74 14"
+    stroke="#3A3A3A"
+    stroke-width="2"
+    stroke-linecap="round"
+  />
+</svg>
