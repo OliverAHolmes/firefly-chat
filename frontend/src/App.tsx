@@ -131,7 +131,7 @@ function App() {
         <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
 
         {/* Menu Items */}
-        <List>
+        {/* <List>
           <ListItem component="div" sx={{ color: 'white' }}>
             <ListItemIcon sx={{ color: 'white' }}>
               <ChatIcon />
@@ -150,7 +150,7 @@ function App() {
             </ListItemIcon>
             <ListItemText primary="Clear Conversations" />
           </ListItem>
-        </List>
+        </List> */}
       </Drawer>
 
       {/* Main Chat Area */}
