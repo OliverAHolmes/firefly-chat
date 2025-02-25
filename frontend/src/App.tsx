@@ -5,7 +5,7 @@ import {
   Box, TextField, Button, 
   List, ListItem, ListItemText, Typography,
   CircularProgress, Drawer, ListItemIcon,
-  Divider
+  Divider, IconButton, ListItemButton
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import ChatIcon from '@mui/icons-material/Chat';
@@ -14,11 +14,18 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
+interface ChatSession {
+  id: number;
+  title: string;
+  created_at: string;
+}
+
 function App() {
   // We'll store messages as an array of { role: 'user'|'assistant', content: string }
   const [messages, setMessages] = useState<{role: string; content: string}[]>([]);
   const [userInput, setUserInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
 
   // Auto scroll to bottom when new messages arrive
@@ -29,6 +36,40 @@ function App() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Load sessions on mount
+  useEffect(() => {
+    loadSessions();
+  }, []);
+
+  const loadSessions = async () => {
+    if (window.pywebview?.api) {
+      const sessions = await window.pywebview.api.get_sessions();
+      setSessions(sessions);
+    }
+  };
+
+  const createNewSession = async () => {
+    if (window.pywebview?.api) {
+      await window.pywebview.api.create_new_session();
+      setMessages([]);
+      loadSessions();
+    }
+  };
+
+  const loadSession = async (sessionId: number) => {
+    if (window.pywebview?.api) {
+      const messages = await window.pywebview.api.load_session(sessionId);
+      setMessages(messages);
+    }
+  };
+
+  const deleteSession = async (sessionId: number) => {
+    if (window.pywebview?.api) {
+      await window.pywebview.api.delete_session(sessionId);
+      loadSessions();
+    }
+  };
 
   // Helper to send a message to Python/OpenAI
   const sendMessage = async () => {
@@ -114,7 +155,7 @@ function App() {
             variant="outlined"
             fullWidth
             startIcon={<AddIcon />}
-            onClick={clearChat}
+            onClick={createNewSession}
             sx={{
               color: 'white',
               borderColor: 'rgba(255,255,255,0.3)',
@@ -131,26 +172,35 @@ function App() {
         <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
 
         {/* Menu Items */}
-        {/* <List>
-          <ListItem component="div" sx={{ color: 'white' }}>
-            <ListItemIcon sx={{ color: 'white' }}>
-              <ChatIcon />
-            </ListItemIcon>
-            <ListItemText primary="Chat History" />
-          </ListItem>
-          <ListItem component="div" sx={{ color: 'white' }}>
-            <ListItemIcon sx={{ color: 'white' }}>
-              <SettingsIcon />
-            </ListItemIcon>
-            <ListItemText primary="Settings" />
-          </ListItem>
-          <ListItem component="div" sx={{ color: 'white' }} onClick={clearChat}>
-            <ListItemIcon sx={{ color: 'white' }}>
-              <DeleteIcon />
-            </ListItemIcon>
-            <ListItemText primary="Clear Conversations" />
-          </ListItem>
-        </List> */}
+        <List>
+          {sessions.map((session) => (
+            <ListItem
+              key={session.id}
+              sx={{ color: 'white' }}
+              secondaryAction={
+                <IconButton 
+                  edge="end" 
+                  aria-label="delete"
+                  onClick={() => deleteSession(session.id)}
+                  sx={{ color: 'rgba(255,255,255,0.7)' }}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              }
+            >
+              <ListItemButton onClick={() => loadSession(session.id)}>
+                <ListItemIcon sx={{ color: 'white' }}>
+                  <ChatIcon />
+                </ListItemIcon>
+                <ListItemText 
+                  primary={session.title} 
+                  secondary={new Date(session.created_at).toLocaleString()}
+                  secondaryTypographyProps={{ sx: { color: 'rgba(255,255,255,0.7)' } }}
+                />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
       </Drawer>
 
       {/* Main Chat Area */}
