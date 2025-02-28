@@ -1,18 +1,20 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { 
   Box, TextField, Button, 
   List, ListItem, ListItemText, Typography,
   CircularProgress, Drawer, ListItemIcon,
-  Divider, IconButton, ListItemButton
+  IconButton, ListItemButton,
+  Dialog, DialogTitle, DialogContent, 
+  DialogActions, DialogContentText 
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import ChatIcon from '@mui/icons-material/Chat';
-import SettingsIcon from '@mui/icons-material/Settings';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import EditIcon from '@mui/icons-material/Edit';
 
 interface ChatSession {
   id: number;
@@ -27,6 +29,16 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
+  const [renameDialog, setRenameDialog] = useState<{
+    open: boolean;
+    sessionId: number | null;
+    currentTitle: string;
+  }>({
+    open: false,
+    sessionId: null,
+    currentTitle: ""
+  });
+  const [editTitle, setEditTitle] = useState("");
 
   // Auto scroll to bottom when new messages arrive
   const scrollToBottom = () => {
@@ -69,6 +81,42 @@ function App() {
       await window.pywebview.api.delete_session(sessionId);
       loadSessions();
     }
+  };
+
+  const startRenaming = (sessionId: number, currentTitle: string) => {
+    setRenameDialog({
+      open: true,
+      sessionId,
+      currentTitle
+    });
+    setEditTitle(currentTitle);
+  };
+
+  const closeRenameDialog = () => {
+    setRenameDialog({
+      open: false,
+      sessionId: null,
+      currentTitle: ""
+    });
+    setEditTitle("");
+  };
+
+  const saveNewTitle = async () => {
+    if (!editTitle.trim() || !renameDialog.sessionId) return;
+    
+    try {
+      const result = await window.pywebview?.api.rename_session(
+        renameDialog.sessionId, 
+        editTitle.trim()
+      );
+      if (result?.success) {
+        loadSessions();  // Refresh the session list
+      }
+    } catch (error) {
+      console.error('Failed to rename session:', error);
+    }
+    
+    closeRenameDialog();
   };
 
   // Helper to send a message to Python/OpenAI
@@ -136,11 +184,17 @@ function App() {
             boxSizing: 'border-box',
             bgcolor: '#202123',
             color: 'white',
+            display: 'flex',
+            flexDirection: 'column',
           },
         }}
       >
-        {/* New Chat Button */}
-        <Box sx={{ p: 2 }}>
+        {/* Fixed Header Section */}
+        <Box sx={{ 
+          p: 2,
+          borderBottom: 1,
+          borderColor: 'rgba(255,255,255,0.1)',
+        }}>
           <Typography variant="h6" sx={{ 
             color: 'white', 
             mb: 2,
@@ -149,7 +203,7 @@ function App() {
             gap: 1
           }}>
             <img src="/fireflychat.svg" alt="Firefly" style={{ width: 80, height: 80 }} />
-            FireflyChat
+            Firefly
           </Typography>
           <Button
             variant="outlined"
@@ -169,38 +223,62 @@ function App() {
           </Button>
         </Box>
 
-        <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
-
-        {/* Menu Items */}
-        <List>
-          {sessions.map((session) => (
-            <ListItem
-              key={session.id}
-              sx={{ color: 'white' }}
-              secondaryAction={
-                <IconButton 
-                  edge="end" 
-                  aria-label="delete"
-                  onClick={() => deleteSession(session.id)}
-                  sx={{ color: 'rgba(255,255,255,0.7)' }}
-                >
-                  <DeleteIcon />
-                </IconButton>
-              }
-            >
-              <ListItemButton onClick={() => loadSession(session.id)}>
-                <ListItemIcon sx={{ color: 'white' }}>
-                  <ChatIcon />
-                </ListItemIcon>
-                <ListItemText 
-                  primary={session.title} 
-                  secondary={new Date(session.created_at).toLocaleString()}
-                  secondaryTypographyProps={{ sx: { color: 'rgba(255,255,255,0.7)' } }}
-                />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
+        {/* Scrollable Sessions List */}
+        <Box sx={{ 
+          flexGrow: 1,
+          overflow: 'auto',
+          '&::-webkit-scrollbar': {
+            width: '8px',
+          },
+          '&::-webkit-scrollbar-track': {
+            background: 'transparent',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            background: 'rgba(255,255,255,0.1)',
+            borderRadius: '4px',
+          },
+          '&::-webkit-scrollbar-thumb:hover': {
+            background: 'rgba(255,255,255,0.2)',
+          },
+        }}>
+          <List>
+            {sessions.map((session) => (
+              <ListItem
+                key={session.id}
+                sx={{ color: 'white' }}
+                secondaryAction={
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <IconButton
+                      edge="end"
+                      onClick={() => startRenaming(session.id, session.title)}
+                      sx={{ color: 'rgba(255,255,255,0.7)' }}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton
+                      edge="end"
+                      onClick={() => deleteSession(session.id)}
+                      sx={{ color: 'rgba(255,255,255,0.7)' }}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Box>
+                }
+              >
+                <ListItemButton onClick={() => loadSession(session.id)}>
+                  <ListItemIcon sx={{ color: 'white' }}>
+                    <ChatIcon />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary={session.title} 
+                    secondary={new Date(session.created_at).toLocaleString()}
+                    secondaryTypographyProps={{ sx: { color: 'rgba(255,255,255,0.7)' } }}
+                  />
+                </ListItemButton>
+              </ListItem>
+            ))}
+          </List>
+        </Box>
       </Drawer>
 
       {/* Main Chat Area */}
@@ -409,6 +487,75 @@ function App() {
           </Box>
         </Box>
       </Box>
+
+      {/* Rename Dialog */}
+      <Dialog 
+        open={renameDialog.open} 
+        onClose={closeRenameDialog}
+        PaperProps={{
+          sx: {
+            bgcolor: '#2A2B32',
+            color: 'white',
+          }
+        }}
+      >
+        <DialogTitle>Rename Chat Session</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ color: 'rgba(255,255,255,0.7)', mb: 2 }}>
+            Enter a new name for this chat session.
+          </DialogContentText>
+          <TextField
+            autoFocus
+            fullWidth
+            value={editTitle}
+            onChange={(e) => setEditTitle(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                saveNewTitle();
+              }
+            }}
+            sx={{
+              '& .MuiInputBase-input': {
+                color: 'white',
+              },
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': {
+                  borderColor: 'rgba(255,255,255,0.3)',
+                },
+                '&:hover fieldset': {
+                  borderColor: 'rgba(255,255,255,0.5)',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: 'white',
+                },
+              },
+              '& .MuiInputLabel-root': {
+                color: 'rgba(255,255,255,0.7)',
+              },
+            }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button 
+            onClick={closeRenameDialog}
+            sx={{ 
+              color: 'rgba(255,255,255,0.7)',
+              '&:hover': {
+                color: 'white',
+              }
+            }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={saveNewTitle}
+            variant="contained"
+            disabled={!editTitle.trim()}
+          >
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

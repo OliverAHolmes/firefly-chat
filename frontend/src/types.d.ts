@@ -11,10 +11,15 @@ interface PyWebviewApi {
     content: string;
   }>>;
   delete_session(sessionId: number): Promise<{ success: boolean }>;
+  rename_session(sessionId: number, newTitle: string): Promise<{
+    success: boolean;
+    title?: string;
+    error?: string;
+  }>;
 }
 
 interface Window {
   pywebview?: {
     api: PyWebviewApi;
   };
-} 
+}
