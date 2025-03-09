@@ -1,15 +1,20 @@
 from typing import List, Dict
 import sqlite3
 from contextlib import contextmanager
-from config import settings
+from app.config import settings
 import logging
+import os
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class ChatDatabase:
     def __init__(self, db_path: str = settings.DB_PATH):
-        self.db_path = db_path
+        self.db_path = os.path.abspath(db_path)
+        logger.info(f"DB Path (absolute): {self.db_path}")
+        
+        os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
+        
         self.init_db()
 
     @contextmanager

@@ -44,9 +44,9 @@ class Api:
 
     def chat_with_openai(self, user_message: str) -> str:
         """Send message to OpenAI and save the conversation"""
-        if not settings.OPENAI_API_KEY:
-            logger.error("OpenAI API key not found in environment variables")
-            return "Error: OpenAI API key not found in environment variables"
+        # if not settings.OPENAI_API_KEY:
+        #     logger.error("OpenAI API key not found in environment variables")
+        #     return "Error: OpenAI API key not found in environment variables"
 
         if not self.current_session_id:
             self.current_session_id = self.db.create_session()
